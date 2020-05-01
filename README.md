@@ -12,11 +12,17 @@ nodejs -v
 Install local web server
 
 mkdir ai-emotion-recognition
+
 cd ai-emotion-recognition
+
 npm install -g express-generator
+
 express -f
+
 npm install
+
 node .\bin\www
+
 
 Open
 http://localhost:300/index.html
