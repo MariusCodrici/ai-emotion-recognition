@@ -18,7 +18,6 @@ express -f
 npm install
 node .\bin\www
 
-
 Open
 http://localhost:300/index.html
 
