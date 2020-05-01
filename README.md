@@ -21,10 +21,12 @@ express -f
 
 npm install
 
-node .\bin\www
+node .\bin\www 
+or
+npm start
 
 
-Open
-http://localhost:300/index.html
+Open in browser
+http://localhost:3000/index.html
 
 
