@@ -12,14 +12,17 @@ The application allows emptying the recorded data buffer.
 
 For successful execution on the local station you need to install node.js and copying the application to the public folder.
 
-Install node.js
+Install node.js (ubuntu)
 
 sudo apt update
+
 sudo apt install nodejs
+
 sudo apt install npm
 nodejs -v
 
-Install local web server
+
+Install local web server (system independent)
 
 mkdir ai-emotion-recognition
 
@@ -34,7 +37,7 @@ npm install
 npm start
 
 
-Open in browser
+Open in browser (CHROME)
 http://localhost:3000/index.html
 
 
