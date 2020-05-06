@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<!--
+    Licensed to the Apache Software Foundation (ASF) under one
+    or more contributor license agreements.  See the NOTICE file
+    distributed with this work for additional information
+    regarding copyright ownership.  The ASF licenses this file
+    to you under the Apache License, Version 2.0 (the
+    "License"); you may not use this file except in compliance
+    with the License.  You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing,
+    software distributed under the License is distributed on an
+    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+     KIND, either express or implied.  See the License for the
+    specific language governing permissions and limitations
+    under the License.
+-->
+<html>
+<head>
+  <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+  <meta charset="UTF-8">
+  <title>Facial Emotions Recognition</title>
+
+  <script src="./javascripts/face-api.min.js"></script>
+
+  <style>
+    canvas {
+      position: absolute;
+    }
+    .container {
+      display: flex;
+      width: 100%;
+      justify-content: center;
+      align-items: center;
+    }
+
+    video {
+      width: 100%;
+    }
+  </style>
+
+<script src="https://sapui5.hana.ondemand.com/resources/sap-ui-core.js" type="text/javascript"
+    id="sap-ui-bootstrap"
+    data-sap-ui-theme="sap_bluecrystal"
+    data-sap-ui-libs="sap.m,sap.ui.commons,sap.ui.table,sap.viz">
+</script>
+
+<script id="myxml" type="text/xmldata">
+  <mvc:View  controllerName="my.own.controller"
+    xmlns:core="sap.ui.core" 
+    xmlns:mvc="sap.ui.core.mvc" 
+    xmlns="sap.m"  
+    xmlns:vtypes="sap.viz.ui5.types" 
+    xmlns:vdata="sap.viz.ui5.data"
+    xmlns:vizc="sap.viz.ui5.controls">
+    <App>
+      <Page id="pgInit" title="AI face emotion reading App" enableScrolling="true">
+        <HBox id="buttonsplace"/>
+        <HBox>
+          <VBox width="30%" >
+            <VBox id="videoplace"/>
+          </VBox>
+          <VBox width="35%">
+
+            <Pie xmlns="sap.viz.ui5" id="pie" width="100%" height="400px">
+              <title>
+                <vtypes:Title text = "Emotions recorded" visible="true" />
+              </title> 
+              <plotArea>
+                  <Pie xmlns="sap.viz.ui5.types" >
+                    <animation dataLoading="false" dataUpdating="false" resizing="false">
+                    </animation>
+                  </Pie>
+              </plotArea>
+              <dataset>
+                <FlattenedDataset xmlns="sap.viz.ui5.data" data="{/Emotions}" >
+                  <dimensions>
+                      <DimensionDefinition axis="1" name="Emotion" value="{Emotion}" />
+                  </dimensions>
+                  <measures>
+                    <MeasureDefinition name="Recordings" value="{Recordings}" />
+                  </measures>
+                </FlattenedDataset>
+              </dataset>
+            </Pie>
+          </VBox>
+          <VBox width="35%">
+            <Pie xmlns="sap.viz.ui5" id="pie2" width="100%" height="400px">
+              <title>
+                <vtypes:Title text = "The percentage of emotional states" visible="true" />
+              </title> 
+              <plotArea>
+                  <Pie xmlns="sap.viz.ui5.types" >
+                    <animation dataLoading="false" dataUpdating="false" resizing="false">
+                    </animation>
+                    </Pie>
+                  </plotArea>
+              <dataset>
+                <FlattenedDataset xmlns="sap.viz.ui5.data" data="{/EmotionNeutralProportion}" >
+                  <dimensions>
+                      <DimensionDefinition axis="1" name="EmotionalStatus" value="{EmotionalStatus}" />
+                  </dimensions>
+                  <measures>
+                    <MeasureDefinition name="Recordings" value="{Recordings}" />
+                  </measures>
+                </FlattenedDataset>
+              </dataset>
+            </Pie>
+          </VBox>
+        </HBox>  
+        <HBox>
+          <VBox fitContainer="true" justifyContent="Center" alignItems="Center" alignContent="Center">
+            <items>
+              <Label text='Emotion' design="Bold" class='settingsLabel' labelFor="iEmotion"></Label>
+             <Input id="iEmotion" type="Text" value="{/Detection/emotion}"></Input>
+             <Label text='Genre' design="Bold" class='settingsLabel' labelFor="iGenre"></Label>
+             <Input id="iGenre" type="Text" value="{/Detection/genre}"></Input>
+             <Label text='Age' design="Bold" class='settingsLabel' labelFor="iAge"></Label>
+             <Input id="iAge" type="Text" value="{/Detection/age}"></Input>
+            </items>
+           </VBox>
+        </HBox>
+      </Page>
+    </App>
+  </mvc:View>	
+ </script>
+
+
+<script type="text/javascript">
+ // -------------------------------------general functions
+  function getmydataEmotion(vEmotions, oDataEmotions, Detection) {
+
+    var mydataEmotion = {"Emotions" : [], "EmotionNeutralProportion":[], "Detection":{}};
+    var NumberOfEmotions = 0;
+    vEmotions.forEach( (itemEmotion) => {
+      if ( itemEmotion != "Neutral"){
+        mydataEmotion.Emotions.push({"Emotion" : itemEmotion, "Recordings": oDataEmotions[itemEmotion]})
+        NumberOfEmotions += oDataEmotions[itemEmotion];
+      };
+    });
+    mydataEmotion.EmotionNeutralProportion.push({"EmotionalStatus" : "Emotion", "Recordings": NumberOfEmotions});
+    mydataEmotion.EmotionNeutralProportion.push({"EmotionalStatus" : "Neutral", "Recordings": oDataEmotions["Neutral"]});
+    mydataEmotion.Detection = Detection; 
+    return mydataEmotion;
+  };
+
+  function deleteRecordings(vEmotions, oDataEmotions) {
+    vEmotions.forEach( (itemEmotion) => {
+      oDataEmotions[itemEmotion] = 0
+      });
+    return oDataEmotions
+  };
+
+  function EmotionConversion(emotion) {
+    switch(emotion) {
+      case "happy":
+        return "Enjoyment";
+        break;
+      case "sad":
+        return "Sadness";
+        break;
+      case "angry":
+        return "Anger";
+        break;
+      case "fearful":
+        return "Fear" ;
+        break;
+      case "disgusted":
+        return "Disgust";
+        break;
+      case "surprised":
+        return "Surprise";
+        break;    
+      case "neutral":
+        return "Neutral";
+        break;   
+    }     
+  };
+</script>
+
+  <script type="text/javascript">
+
+sap.ui.controller("my.own.controller", {
+	onInit : function() {
+   
+    var oPage = this.getView().byId("pgInit");
+      // ---------------------------------------------------- DATA MODEL : BEGIN
+
+      var oDataEmotions = {
+        "Enjoyment" : 0,
+        "Disgust"   : 0,
+        "Fear"      : 0,
+        "Anger"     : 0,
+        "Sadness"   : 0,
+        "Surprise"  : 0,
+        "Neutral"   : 0
+      };
+
+      var vEmotions = [
+        "Enjoyment",
+        "Disgust"  ,
+        "Fear"      ,
+        "Anger"     ,
+        "Sadness"   ,
+        "Surprise",
+        "Neutral"   
+      ];
+
+      var video;
+      var canvas;
+      var myView;
+      var isScreenSmall = window.matchMedia("(max-width: 700px)");
+      let predictedAges = [];
+      var EmotionPredicted;
+
+      var oModelEmotion = new sap.ui.model.json.JSONModel();
+      oModelEmotion.setData(getmydataEmotion(vEmotions,oDataEmotions));
+      myView =  this.getView();
+      myView.setModel(oModelEmotion);
+// ---------------------------------------------------- DATA MODEL : END
+
+
+// ---------------------------------------------------- PAGE IMPUT EMOTIONS DATA : BEGIN
+      
+      var htmlVideo = new sap.ui.core.HTML("html1", {
+        content:
+                "<div class='container'>" +
+                  "<video id='videomnd' height='300' width='500' autoplay muted></video>" +
+                "</div>" 
+      });
+
+      var oPanelVideo = new sap.ui.commons.Panel();
+      oPanelVideo.addContent(htmlVideo);
+      VBOXvideo = myView.byId("videoplace");
+      VBOXvideo.insertItem(oPanelVideo);
+
+      function startVideo() {
+        navigator.getUserMedia(
+          { video: {} },
+          stream => (video.srcObject = stream),
+          err => console.error(err)
+        );
+      };
+
+      oBtnStartAI= new sap.m.Button({
+        text : "Start Emotion Recognition",
+        width: "100%",
+        press : function () {
+          video = document.getElementById("videomnd");
+          Promise.all([
+            faceapi.nets.tinyFaceDetector.loadFromUri("/models"),
+            faceapi.nets.faceLandmark68Net.loadFromUri("/models"),
+            faceapi.nets.faceRecognitionNet.loadFromUri("/models"),
+            faceapi.nets.faceExpressionNet.loadFromUri("/models"),
+            faceapi.nets.ageGenderNet.loadFromUri("/models")
+          ]).then(startVideo);
+
+          /****Event Listeiner for the video****/
+          video.addEventListener("playing", () => {
+            if(!Boolean(canvas)){ 
+              canvas = faceapi.createCanvasFromMedia(video);
+              let container = document.querySelector(".container");
+              container.append(canvas);
+            };
+
+            const displaySize = { width: '500', height: '500' };
+            faceapi.matchDimensions(canvas, displaySize);
+
+            setInterval(async () => {
+              const detections = await faceapi
+                .detectSingleFace(video, new faceapi.TinyFaceDetectorOptions())
+                .withFaceLandmarks()
+                .withFaceExpressions()
+                .withAgeAndGender();
+
+              const resizedDetections = faceapi.resizeResults(detections, displaySize);
+              canvas.getContext("2d").clearRect(0, 0, canvas.width, canvas.height);
+
+              /****Drawing the detection box and landmarkes on canvas****/
+              faceapi.draw.drawDetections(canvas, resizedDetections);
+              faceapi.draw.drawFaceLandmarks(canvas, resizedDetections);
+
+              /****Setting values to the DOM****/
+              if (resizedDetections && Object.keys(resizedDetections).length > 0) {
+                const age = resizedDetections.age;
+                const interpolatedAge = interpolateAgePredictions(age);
+                const gender = resizedDetections.gender;
+                const expressions = resizedDetections.expressions;
+                const maxValue = Math.max(...Object.values(expressions));
+                const emotion = Object.keys(expressions).filter(
+                  item => expressions[item] === maxValue
+                );
+                
+                var Detection = { 
+                  "age": `${interpolatedAge}`,
+                  "genre": gender, 
+                  "emotion" : emotion[0]
+                }; 
+
+                EmotionPredicted = EmotionConversion(emotion[0]);
+                oDataEmotions[EmotionPredicted] = oDataEmotions[EmotionPredicted] +1;
+                oModelEmotion.setData(getmydataEmotion(vEmotions,oDataEmotions, Detection));
+                myView.setModel(oModelEmotion);
+              }
+            }, 10);
+          });
+        }
+      });
+
+       oBtnDeleteRecordings = new sap.m.Button({
+            text : "Delete Recordings",
+            width: "100%",
+            press : function () {
+            oDataEmotions = deleteRecordings(vEmotions,oDataEmotions);
+            oModelEmotion.setData(getmydataEmotion(vEmotions,oDataEmotions));
+            
+            }
+          });
+
+        vboxDeleteRecordings = new sap.m.VBox({
+          width : "100%",
+          alignItems : "Center",
+          justifyContent : "Center",
+          items:[
+            oBtnDeleteRecordings
+          ]
+        });
+
+        vboxImputEmotionsData = new sap.m.VBox({
+          width : "50%",
+          alignItems : "Center",
+          justifyContent : "Center",
+          items: [
+            oBtnStartAI,
+          ]
+        });
+
+        var HBOXbuttons = myView.byId("buttonsplace");
+        HBOXbuttons.insertItem(vboxDeleteRecordings);
+        HBOXbuttons.insertItem(vboxImputEmotionsData);
+        //oPage.addContent(vboxImputEmotionsData);
+// ---------------------------------------------------- PAGE IMPUT EMOTIONS DATA : END
+
+      /****Fixing the video with based on size size  ****/
+      function screenResize(isScreenSmall) {
+        if (isScreenSmall.matches) {
+//          video.style.width = "320px";
+        } else {
+//          video.style.width = "500px";
+        }
+      };
+
+      screenResize(isScreenSmall);
+      isScreenSmall.addListener(screenResize);
+
+      function interpolateAgePredictions(age) {
+        predictedAges = [age].concat(predictedAges).slice(0, 30);
+        const avgPredictedAge =
+          predictedAges.reduce((total, a) => total + a) / predictedAges.length;
+        return avgPredictedAge;
+      };
+// ----- DASHBOARD EmotionMap: END
+
+    }
+
+  })
+ 
+  sap.ui.view({
+    viewContent : document.scripts.myxml.innerText,
+    type : sap.ui.core.mvc.ViewType.XML
+  }).placeAt("content")
+  </script>
+
+</head>
+<body class="sapUiBody" id="content">
+</body>
+</html>
