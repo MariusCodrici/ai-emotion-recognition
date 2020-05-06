@@ -10,7 +10,7 @@ The identified emotions are centralized and displayed in two graphs:
 - a pie chart for comparing emotional and neutral states.
 The application allows emptying the recorded data buffer.
 
-For successful execution on the local station you need to install node.js.
+For successful execution on the local station you need to install node.js and copying the application to the public folder.
 
 Install node.js
 
@@ -22,14 +22,15 @@ nodejs -v
 Install local web server
 
 mkdir ai-emotion-recognition
+
 cd ai-emotion-recognition
+
 npm install -g express-generator
+
 express -f
 
 npm install
 
-node .\bin\www 
-or
 npm start
 
 
